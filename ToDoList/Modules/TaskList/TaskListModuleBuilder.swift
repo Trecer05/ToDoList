@@ -13,7 +13,9 @@ enum TaskListModuleBuilder {
             initialLoader: initialLoader
         )
 
-        let router = TaskListRouter()
+        let router = TaskListRouter(
+            repository: repository
+        )
 
         let presenter = TaskListPresenter(
             interactor: interactor,

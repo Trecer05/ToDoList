@@ -59,6 +59,14 @@ extension TaskListPresenter: TaskListViewOutput {
     func didToggleTask(id: UUID) {
         interactor.toggleTask(id: id)
     }
+
+    func didTapAddTask() {
+        router.showCreateTask {
+            [weak self] _ in
+
+            self?.interactor.fetchTasks()
+        }
+    }
 }
 
 extension TaskListPresenter: TaskListInteractorOutput {

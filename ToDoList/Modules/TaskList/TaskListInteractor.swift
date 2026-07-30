@@ -134,6 +134,11 @@ extension TaskListInteractor:
                     \(error.localizedDescription, privacy: .public)
                     """
                 )
+
+                // Возвращаем UI к фактическому
+                // состоянию, если оптимистичное
+                // переключение не сохранилось.
+                self.publishTasks()
             }
         }
     }

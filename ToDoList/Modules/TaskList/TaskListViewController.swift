@@ -408,6 +408,12 @@ final class TaskListViewController: UIViewController {
         )
 
         searchTextField.delegate = self
+
+        addButton.addTarget(
+            self,
+            action: #selector(addButtonTapped),
+            for: .touchUpInside
+        )
     }
 
     // MARK: - Data Source
@@ -459,6 +465,11 @@ final class TaskListViewController: UIViewController {
         presenter?.didChangeSearchText(
             searchTextField.text ?? ""
         )
+    }
+
+    @objc
+    private func addButtonTapped() {
+        presenter?.didTapAddTask()
     }
 
     // MARK: - Task Count

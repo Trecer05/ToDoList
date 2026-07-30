@@ -12,6 +12,8 @@ protocol TaskListViewOutput: AnyObject {
     func didChangeSearchText(_ text: String)
 
     func didToggleTask(id: UUID)
+
+    func didTapAddTask()
 }
 
 protocol TaskListInteractorInput: AnyObject {
@@ -30,4 +32,8 @@ protocol TaskListInteractorOutput: AnyObject {
 
 protocol TaskListRouterInput: AnyObject {
 
+    func showCreateTask(
+        onTaskSaved:
+            @escaping (TaskItem) -> Void
+    )
 }
