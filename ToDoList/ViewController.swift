@@ -1,19 +1,16 @@
-//
-//  ViewController.swift
-//  ToDoList
-//
-//  Created by Sergey Tretyakov on 30.07.2026.
-//
-
 import UIKit
 
-class ViewController: UIViewController {
+final class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+
+        configureAppearance()
     }
 
-
+    private func configureAppearance() {
+        view.backgroundColor = .systemBackground
+        title = "Задачи"
+        navigationItem.largeTitleDisplayMode = .always
+    }
 }
-
