@@ -1,12 +1,10 @@
 import Foundation
 import CoreData
 
-extension TaskEntity {
+nonisolated extension TaskEntity {
 
     @nonobjc
-    class func fetchRequest()
-        -> NSFetchRequest<TaskEntity> {
-
+    class func fetchRequest() -> NSFetchRequest<TaskEntity> {
         NSFetchRequest<TaskEntity>(
             entityName: "TaskEntity"
         )

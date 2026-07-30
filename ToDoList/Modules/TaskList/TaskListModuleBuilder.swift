@@ -2,9 +2,15 @@ import UIKit
 
 enum TaskListModuleBuilder {
 
-    static func build() -> UIViewController {
+    static func build(
+        repository: TaskRepository
+    ) -> UIViewController {
         let view = TaskListViewController()
-        let interactor = TaskListInteractor()
+
+        let interactor = TaskListInteractor(
+            repository: repository
+        )
+
         let router = TaskListRouter()
 
         let presenter = TaskListPresenter(

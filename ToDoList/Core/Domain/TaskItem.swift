@@ -1,6 +1,6 @@
 import Foundation
 
-struct TaskItem: Identifiable, Hashable, Sendable {
+nonisolated struct TaskItem: Identifiable, Hashable, Sendable {
 
     let id: UUID
     let remoteID: Int?

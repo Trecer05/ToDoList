@@ -1,4 +1,5 @@
 import UIKit
+import CoreData
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -7,25 +8,49 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(
         _ scene: UIScene,
         willConnectTo session: UISceneSession,
-        options connectionOptions: UIScene.ConnectionOptions
+        options connectionOptions:
+            UIScene.ConnectionOptions
     ) {
-        guard let windowScene = scene as? UIWindowScene else {
+        guard
+            let windowScene = scene as? UIWindowScene,
+            let appDelegate =
+                UIApplication.shared.delegate as? AppDelegate
+        else {
+            assertionFailure(
+                "Application dependencies are unavailable"
+            )
             return
         }
 
-        let rootViewController = TaskListModuleBuilder.build()
-
-        let navigationController = UINavigationController(
-            rootViewController: rootViewController
+        let repository = CoreDataTaskRepository(
+            context: appDelegate
+                .persistentContainer
+                .viewContext
         )
 
-        navigationController.navigationBar.prefersLargeTitles = true
+        let rootViewController =
+            TaskListModuleBuilder.build(
+                repository: repository
+            )
 
-        let window = UIWindow(windowScene: windowScene)
+        let navigationController =
+            UINavigationController(
+                rootViewController: rootViewController
+            )
+
+        navigationController
+            .navigationBar
+            .prefersLargeTitles = false
+
+        let window = UIWindow(
+            windowScene: windowScene
+        )
+
         window.rootViewController = navigationController
         window.overrideUserInterfaceStyle = .dark
 
         self.window = window
+
         window.makeKeyAndVisible()
     }
 }
