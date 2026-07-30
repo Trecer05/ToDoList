@@ -11,6 +11,10 @@ final class TaskListInteractor {
     private var currentSearchQuery = ""
     private var didStartInitialLoading = false
 
+    // Номер запроса защищает экран
+    // от отображения устаревшего результата.
+    private var fetchRequestID = 0
+
     private let logger = Logger(
         subsystem:
             Bundle.main.bundleIdentifier
@@ -27,20 +31,41 @@ final class TaskListInteractor {
     }
 
     private func publishTasks() {
-        do {
-            let tasks =
-                try repository.fetchTasks(
-                    matching: currentSearchQuery
+        fetchRequestID += 1
+
+        let currentRequestID =
+            fetchRequestID
+
+        let query = currentSearchQuery
+
+        repository.fetchTasks(
+            matching: query
+        ) { [weak self] result in
+            guard let self else { return }
+
+            // Если после этого запроса уже был
+            // отправлен новый — старый игнорируем.
+            guard
+                currentRequestID ==
+                    self.fetchRequestID
+            else {
+                return
+            }
+
+            switch result {
+            case .success(let tasks):
+                self.output?.didFetch(
+                    tasks: tasks
                 )
 
-            output?.didFetch(tasks: tasks)
-        } catch {
-            logger.error(
-                """
-                Failed to fetch tasks: \
-                \(error.localizedDescription, privacy: .public)
-                """
-            )
+            case .failure(let error):
+                self.logger.error(
+                    """
+                    Failed to fetch tasks: \
+                    \(error.localizedDescription, privacy: .public)
+                    """
+                )
+            }
         }
     }
 
@@ -83,12 +108,7 @@ extension TaskListInteractor:
     TaskListInteractorInput {
 
     func fetchTasks() {
-        // Сначала моментально отображаем всё,
-        // что уже сохранено локально.
         publishTasks()
-
-        // Затем при необходимости запускаем
-        // первоначальную загрузку из API.
         startInitialLoadingIfNeeded()
     }
 
@@ -98,16 +118,23 @@ extension TaskListInteractor:
     }
 
     func toggleTask(id: UUID) {
-        do {
-            try repository.toggleTask(id: id)
-            publishTasks()
-        } catch {
-            logger.error(
-                """
-                Failed to toggle task: \
-                \(error.localizedDescription, privacy: .public)
-                """
-            )
+        repository.toggleTask(
+            id: id
+        ) { [weak self] result in
+            guard let self else { return }
+
+            switch result {
+            case .success:
+                self.publishTasks()
+
+            case .failure(let error):
+                self.logger.error(
+                    """
+                    Failed to toggle task: \
+                    \(error.localizedDescription, privacy: .public)
+                    """
+                )
+            }
         }
     }
 }

@@ -31,8 +31,8 @@ final class SceneDelegate:
 
         let repository =
             CoreDataTaskRepository(
-                context:
-                    persistentContainer.viewContext
+                persistentContainer:
+                    persistentContainer
             )
 
         let apiClient =

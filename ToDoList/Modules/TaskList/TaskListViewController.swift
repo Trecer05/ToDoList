@@ -186,6 +186,7 @@ final class TaskListViewController: UIViewController {
 
         tableView.showsVerticalScrollIndicator = false
         tableView.keyboardDismissMode = .onDrag
+        tableView.delaysContentTouches = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
 
         return tableView
@@ -429,10 +430,22 @@ final class TaskListViewController: UIViewController {
 
             cell.configure(with: task)
 
-            cell.onCompletionTapped = { [weak self] in
-                self?.presenter?.didToggleTask(
-                    id: taskID
-                )
+            cell.onCompletionTapped = {
+                [weak self] isCompleted in
+
+                guard
+                    let self,
+                    let currentTask = self.tasksByID[taskID]
+                else {
+                    return
+                }
+
+                self.tasksByID[taskID] =
+                    currentTask.settingCompletion(
+                        to: isCompleted
+                    )
+
+                self.presenter?.didToggleTask(id: taskID)
             }
 
             return cell
@@ -480,16 +493,20 @@ extension TaskListViewController: TaskListViewInput {
     func display(
         tasks: [TaskListRowViewModel]
     ) {
+        let previousTasksByID = tasksByID
+
         let previousIDs = Set(
             dataSource.snapshot().itemIdentifiers
         )
 
-        tasksByID = tasks.reduce(into: [:]) {
+        let newTasksByID = tasks.reduce(into: [:]) {
             result,
             task in
 
             result[task.id] = task
         }
+
+        tasksByID = newTasksByID
 
         let currentIDs = tasks.map(\.id)
 
@@ -499,11 +516,12 @@ extension TaskListViewController: TaskListViewInput {
         snapshot.appendSections([0])
         snapshot.appendItems(currentIDs)
 
-        let existingIDs = currentIDs.filter {
+        let changedExistingIDs = currentIDs.filter {
             previousIDs.contains($0)
+                && previousTasksByID[$0] != newTasksByID[$0]
         }
 
-        snapshot.reconfigureItems(existingIDs)
+        snapshot.reconfigureItems(changedExistingIDs)
 
         dataSource.apply(
             snapshot,
