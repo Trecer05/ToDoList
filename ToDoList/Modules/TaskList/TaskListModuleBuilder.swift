@@ -3,12 +3,14 @@ import UIKit
 enum TaskListModuleBuilder {
 
     static func build(
-        repository: TaskRepository
+        repository: TaskRepository,
+        initialLoader: InitialTaskLoading
     ) -> UIViewController {
         let view = TaskListViewController()
 
         let interactor = TaskListInteractor(
-            repository: repository
+            repository: repository,
+            initialLoader: initialLoader
         )
 
         let router = TaskListRouter()

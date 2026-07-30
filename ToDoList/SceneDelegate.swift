@@ -1,7 +1,9 @@
 import UIKit
 import CoreData
 
-final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+final class SceneDelegate:
+    UIResponder,
+    UIWindowSceneDelegate {
 
     var window: UIWindow?
 
@@ -12,9 +14,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             UIScene.ConnectionOptions
     ) {
         guard
-            let windowScene = scene as? UIWindowScene,
+            let windowScene =
+                scene as? UIWindowScene,
             let appDelegate =
-                UIApplication.shared.delegate as? AppDelegate
+                UIApplication.shared.delegate
+                    as? AppDelegate
         else {
             assertionFailure(
                 "Application dependencies are unavailable"
@@ -22,20 +26,35 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        let repository = CoreDataTaskRepository(
-            context: appDelegate
-                .persistentContainer
-                .viewContext
-        )
+        let persistentContainer =
+            appDelegate.persistentContainer
+
+        let repository =
+            CoreDataTaskRepository(
+                context:
+                    persistentContainer.viewContext
+            )
+
+        let apiClient =
+            DummyJSONTaskAPIClient()
+
+        let initialLoader =
+            InitialTaskLoader(
+                apiClient: apiClient,
+                persistentContainer:
+                    persistentContainer
+            )
 
         let rootViewController =
             TaskListModuleBuilder.build(
-                repository: repository
+                repository: repository,
+                initialLoader: initialLoader
             )
 
         let navigationController =
             UINavigationController(
-                rootViewController: rootViewController
+                rootViewController:
+                    rootViewController
             )
 
         navigationController
@@ -46,8 +65,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             windowScene: windowScene
         )
 
-        window.rootViewController = navigationController
-        window.overrideUserInterfaceStyle = .dark
+        window.rootViewController =
+            navigationController
+
+        window.overrideUserInterfaceStyle =
+            .dark
 
         self.window = window
 
