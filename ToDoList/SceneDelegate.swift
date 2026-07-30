@@ -13,7 +13,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        let rootViewController = ViewController()
+        let rootViewController = TaskListViewController()
 
         let navigationController = UINavigationController(
             rootViewController: rootViewController
