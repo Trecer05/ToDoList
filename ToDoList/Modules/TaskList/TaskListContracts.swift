@@ -1,8 +1,28 @@
 import Foundation
 
+nonisolated enum TaskListFailure:
+    Sendable {
+
+    case fetch(TaskRepositoryError)
+    case completion(TaskRepositoryError)
+    case deletion(TaskRepositoryError)
+    case initialImport(InitialTaskLoadError)
+}
+
 protocol TaskListViewInput: AnyObject {
 
-    func display(tasks: [TaskListRowViewModel])
+    func display(
+        tasks: [TaskListRowViewModel]
+    )
+
+    func displayError(
+        title: String,
+        message: String
+    )
+
+    func displayInitialLoadError(
+        message: String
+    )
 }
 
 protocol TaskListViewOutput: AnyObject {
@@ -11,9 +31,22 @@ protocol TaskListViewOutput: AnyObject {
 
     func didChangeSearchText(_ text: String)
 
-    func didToggleTask(id: UUID)
+    func didSetTaskCompletion(
+        id: UUID,
+        isCompleted: Bool
+    )
 
     func didTapAddTask()
+
+    func didSelectTask(id: UUID)
+
+    func didRequestEditTask(id: UUID)
+
+    func didRequestShareTask(id: UUID)
+
+    func didRequestDeleteTask(id: UUID)
+
+    func didTapRetryInitialLoad()
 }
 
 protocol TaskListInteractorInput: AnyObject {
@@ -22,12 +55,21 @@ protocol TaskListInteractorInput: AnyObject {
 
     func searchTasks(query: String)
 
-    func toggleTask(id: UUID)
+    func setTaskCompletion(
+        id: UUID,
+        isCompleted: Bool
+    )
+
+    func deleteTask(id: UUID)
+
+    func retryInitialLoading()
 }
 
 protocol TaskListInteractorOutput: AnyObject {
 
     func didFetch(tasks: [TaskItem])
+
+    func didFail(_ failure: TaskListFailure)
 }
 
 protocol TaskListRouterInput: AnyObject {
@@ -35,5 +77,18 @@ protocol TaskListRouterInput: AnyObject {
     func showCreateTask(
         onTaskSaved:
             @escaping (TaskItem) -> Void
+    )
+
+    func showEditTask(
+        task: TaskItem,
+        onTaskSaved:
+            @escaping (TaskItem) -> Void
+    )
+
+    func showShareSheet(text: String)
+
+    func showDeleteConfirmation(
+        taskTitle: String,
+        onConfirm: @escaping () -> Void
     )
 }

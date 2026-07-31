@@ -91,8 +91,9 @@ nonisolated protocol TaskRepository: AnyObject {
             ) -> Void
     )
 
-    func toggleTask(
+    func setTaskCompletion(
         id: UUID,
+        isCompleted: Bool,
         completion:
             @escaping @MainActor @Sendable (
                 Result<

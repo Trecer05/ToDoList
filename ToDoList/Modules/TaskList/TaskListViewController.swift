@@ -84,6 +84,23 @@ final class TaskListViewController: UIViewController {
 
     private lazy var dataSource = makeDataSource()
 
+    private var canPresentAlert: Bool {
+        let isVisibleController: Bool
+
+        if let navigationController {
+            isVisibleController =
+                navigationController
+                    .topViewController === self
+        } else {
+            isVisibleController =
+                view.window != nil
+        }
+
+        return view.window != nil
+            && isVisibleController
+            && presentedViewController == nil
+    }
+
     // MARK: - UI
 
     private let titleLabel: UILabel = {
@@ -95,6 +112,9 @@ final class TaskListViewController: UIViewController {
             ofSize: 34,
             weight: .bold
         )
+
+        label.accessibilityIdentifier =
+            "taskList.title"
 
         label.translatesAutoresizingMaskIntoConstraints = false
 
@@ -166,6 +186,9 @@ final class TaskListViewController: UIViewController {
         textField.rightViewMode = .always
 
         textField.accessibilityLabel = "Поиск задач"
+        textField.accessibilityIdentifier =
+            "taskList.search"
+
         textField.translatesAutoresizingMaskIntoConstraints = false
 
         return textField
@@ -187,6 +210,9 @@ final class TaskListViewController: UIViewController {
         tableView.showsVerticalScrollIndicator = false
         tableView.keyboardDismissMode = .onDrag
         tableView.delaysContentTouches = false
+        tableView.accessibilityIdentifier =
+            "taskList.table"
+
         tableView.translatesAutoresizingMaskIntoConstraints = false
 
         return tableView
@@ -217,6 +243,9 @@ final class TaskListViewController: UIViewController {
         )
 
         label.textAlignment = .center
+        label.accessibilityIdentifier =
+            "taskList.count"
+
         label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
@@ -238,6 +267,9 @@ final class TaskListViewController: UIViewController {
         button.setImage(image, for: .normal)
         button.tintColor = .systemYellow
         button.accessibilityLabel = "Добавить задачу"
+        button.accessibilityIdentifier =
+            "taskList.add"
+
         button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
@@ -396,6 +428,7 @@ final class TaskListViewController: UIViewController {
 
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 88
+        tableView.delegate = self
 
         _ = dataSource
     }
@@ -451,7 +484,11 @@ final class TaskListViewController: UIViewController {
                         to: isCompleted
                     )
 
-                self.presenter?.didToggleTask(id: taskID)
+                self.presenter?
+                    .didSetTaskCompletion(
+                        id: taskID,
+                        isCompleted: isCompleted
+                    )
             }
 
             return cell
@@ -542,6 +579,174 @@ extension TaskListViewController: TaskListViewInput {
         taskCountLabel.text = makeTaskCountText(
             for: tasks.count
         )
+    }
+
+    func displayError(
+        title: String,
+        message: String
+    ) {
+        guard canPresentAlert else {
+            return
+        }
+
+        let alert = UIAlertController(
+            title: title,
+            message: message,
+            preferredStyle: .alert
+        )
+
+        alert.addAction(
+            UIAlertAction(
+                title: "Понятно",
+                style: .default
+            )
+        )
+
+        present(
+            alert,
+            animated: true
+        )
+    }
+
+    func displayInitialLoadError(
+        message: String
+    ) {
+        guard canPresentAlert else {
+            return
+        }
+
+        let alert = UIAlertController(
+            title:
+                "Не удалось загрузить стартовые задачи",
+            message:
+                """
+                \(message)
+
+                Локальные задачи продолжат работать. \
+                Можно повторить загрузку сейчас или позже.
+                """,
+            preferredStyle: .alert
+        )
+
+        alert.addAction(
+            UIAlertAction(
+                title: "Позже",
+                style: .cancel
+            )
+        )
+
+        alert.addAction(
+            UIAlertAction(
+                title: "Повторить",
+                style: .default
+            ) { [weak self] _ in
+                self?.presenter?
+                    .didTapRetryInitialLoad()
+            }
+        )
+
+        present(
+            alert,
+            animated: true
+        )
+    }
+}
+
+// MARK: - UITableViewDelegate
+
+extension TaskListViewController:
+    UITableViewDelegate {
+
+    func tableView(
+        _ tableView: UITableView,
+        didSelectRowAt indexPath: IndexPath
+    ) {
+        guard
+            let taskID =
+                dataSource.itemIdentifier(
+                    for: indexPath
+                )
+        else {
+            return
+        }
+
+        searchTextField
+            .resignFirstResponder()
+
+        presenter?.didSelectTask(
+            id: taskID
+        )
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        contextMenuConfigurationForRowAt
+            indexPath: IndexPath,
+        point: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        guard
+            let taskID =
+                dataSource.itemIdentifier(
+                    for: indexPath
+                )
+        else {
+            return nil
+        }
+
+        return UIContextMenuConfiguration(
+            identifier: taskID as NSUUID,
+            previewProvider: nil
+        ) { [weak self] _ in
+            guard let self else {
+                return nil
+            }
+
+            let editAction = UIAction(
+                title: "Редактировать",
+                image: UIImage(
+                    systemName: "square.and.pencil"
+                )
+            ) { [weak self] _ in
+                self?.presenter?
+                    .didRequestEditTask(
+                        id: taskID
+                    )
+            }
+
+            let shareAction = UIAction(
+                title: "Поделиться",
+                image: UIImage(
+                    systemName:
+                        "square.and.arrow.up"
+                )
+            ) { [weak self] _ in
+                self?.presenter?
+                    .didRequestShareTask(
+                        id: taskID
+                    )
+            }
+
+            let deleteAction = UIAction(
+                title: "Удалить",
+                image: UIImage(
+                    systemName: "trash"
+                ),
+                attributes: .destructive
+            ) { [weak self] _ in
+                self?.presenter?
+                    .didRequestDeleteTask(
+                        id: taskID
+                    )
+            }
+
+            return UIMenu(
+                children: [
+                    editAction,
+                    shareAction,
+                    deleteAction
+                ]
+            )
+        }
     }
 }
 

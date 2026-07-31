@@ -10,6 +10,7 @@ final class TaskListInteractor {
 
     private var currentSearchQuery = ""
     private var didStartInitialLoading = false
+    private var deletingTaskIDs: Set<UUID> = []
 
     // Номер запроса защищает экран
     // от отображения устаревшего результата.
@@ -65,6 +66,10 @@ final class TaskListInteractor {
                     \(error.localizedDescription, privacy: .public)
                     """
                 )
+
+                self.output?.didFail(
+                    .fetch(error)
+                )
             }
         }
     }
@@ -93,11 +98,17 @@ final class TaskListInteractor {
                 self.publishTasks()
 
             case .failure(let error):
+                self.didStartInitialLoading = false
+
                 self.logger.error(
                     """
                     Initial import failed: \
                     \(error.localizedDescription, privacy: .public)
                     """
+                )
+
+                self.output?.didFail(
+                    .initialImport(error)
                 )
             }
         }
@@ -117,20 +128,29 @@ extension TaskListInteractor:
         publishTasks()
     }
 
-    func toggleTask(id: UUID) {
-        repository.toggleTask(
-            id: id
+    func setTaskCompletion(
+        id: UUID,
+        isCompleted: Bool
+    ) {
+        repository.setTaskCompletion(
+            id: id,
+            isCompleted: isCompleted
         ) { [weak self] result in
             guard let self else { return }
 
             switch result {
             case .success:
-                self.publishTasks()
+                // UI и Presenter уже получили
+                // конкретное конечное состояние.
+                // Повторный fetch здесь вызвал бы
+                // визуальный откат при серии
+                // быстрых нажатий.
+                break
 
             case .failure(let error):
                 self.logger.error(
                     """
-                    Failed to toggle task: \
+                    Failed to update task completion: \
                     \(error.localizedDescription, privacy: .public)
                     """
                 )
@@ -139,7 +159,50 @@ extension TaskListInteractor:
                 // состоянию, если оптимистичное
                 // переключение не сохранилось.
                 self.publishTasks()
+
+                self.output?.didFail(
+                    .completion(error)
+                )
             }
         }
+    }
+
+    func deleteTask(id: UUID) {
+        guard
+            deletingTaskIDs.insert(id).inserted
+        else {
+            return
+        }
+
+        repository.deleteTask(
+            id: id
+        ) { [weak self] result in
+            guard let self else { return }
+
+            self.deletingTaskIDs.remove(id)
+
+            switch result {
+            case .success:
+                self.publishTasks()
+
+            case .failure(let error):
+                self.logger.error(
+                    """
+                    Failed to delete task: \
+                    \(error.localizedDescription, privacy: .public)
+                    """
+                )
+
+                self.publishTasks()
+
+                self.output?.didFail(
+                    .deletion(error)
+                )
+            }
+        }
+    }
+
+    func retryInitialLoading() {
+        startInitialLoadingIfNeeded()
     }
 }

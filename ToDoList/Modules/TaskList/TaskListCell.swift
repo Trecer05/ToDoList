@@ -21,6 +21,7 @@ final class TaskListCell: UITableViewCell {
             forImageIn: .normal
         )
 
+        button.isExclusiveTouch = true
         button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
@@ -127,6 +128,11 @@ final class TaskListCell: UITableViewCell {
         with viewModel: TaskListRowViewModel
     ) {
         self.viewModel = viewModel
+        accessibilityIdentifier =
+            "taskList.cell.\(viewModel.id.uuidString)"
+
+        completionButton.accessibilityIdentifier =
+            "taskList.completion.\(viewModel.id.uuidString)"
 
         configureTitle(using: viewModel)
 

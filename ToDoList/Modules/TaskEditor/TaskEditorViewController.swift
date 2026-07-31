@@ -5,7 +5,10 @@ final class TaskEditorViewController:
 
     private enum Layout {
         static let horizontalInset: CGFloat = 20
-        static let contentTopInset: CGFloat = 8
+        static let backTopInset: CGFloat = 2
+        static let backLeadingInset: CGFloat = 8
+        static let backHeight: CGFloat = 36
+        static let backToTitleSpacing: CGFloat = 10
         static let titleHeight: CGFloat = 48
         static let titleToDateSpacing: CGFloat = 2
         static let dateToDetailsSpacing: CGFloat = 14
@@ -21,6 +24,56 @@ final class TaskEditorViewController:
 
     private var shouldFocusTitle = false
     private var isSaving = false
+
+    private let backButton: UIButton = {
+        let button = UIButton(type: .system)
+
+        let symbolConfiguration =
+            UIImage.SymbolConfiguration(
+                pointSize: 17,
+                weight: .medium
+            )
+
+        button.setImage(
+            UIImage(
+                systemName: "chevron.left",
+                withConfiguration:
+                    symbolConfiguration
+            ),
+            for: .normal
+        )
+
+        button.setTitle(
+            "Назад",
+            for: .normal
+        )
+
+        button.tintColor = .systemYellow
+        button.setTitleColor(
+            .systemYellow,
+            for: .normal
+        )
+
+        button.titleLabel?.font =
+            .systemFont(
+                ofSize: 17,
+                weight: .regular
+            )
+
+        button.contentHorizontalAlignment =
+            .leading
+
+        button.accessibilityLabel =
+            "Сохранить и вернуться назад"
+
+        button.accessibilityIdentifier =
+            "taskEditor.back"
+
+        button.translatesAutoresizingMaskIntoConstraints =
+            false
+
+        return button
+    }()
 
     private let titleTextField: UITextField = {
         let textField = UITextField()
@@ -51,6 +104,9 @@ final class TaskEditorViewController:
         textField.accessibilityLabel =
             "Название задачи"
 
+        textField.accessibilityIdentifier =
+            "taskEditor.title"
+
         textField.translatesAutoresizingMaskIntoConstraints =
             false
 
@@ -69,6 +125,9 @@ final class TaskEditorViewController:
 
         label.accessibilityLabel =
             "Дата создания задачи"
+
+        label.accessibilityIdentifier =
+            "taskEditor.date"
 
         label.translatesAutoresizingMaskIntoConstraints =
             false
@@ -108,6 +167,9 @@ final class TaskEditorViewController:
 
         textView.accessibilityLabel =
             "Описание задачи"
+
+        textView.accessibilityIdentifier =
+            "taskEditor.details"
 
         textView.translatesAutoresizingMaskIntoConstraints =
             false
@@ -188,7 +250,7 @@ final class TaskEditorViewController:
 
         navigationController?
             .setNavigationBarHidden(
-                false,
+                true,
                 animated: animated
             )
 
@@ -213,60 +275,10 @@ final class TaskEditorViewController:
 
     private func configureNavigation() {
         navigationItem.hidesBackButton = true
-
-        var buttonConfiguration =
-            UIButton.Configuration.plain()
-
-        buttonConfiguration.title = "Назад"
-        buttonConfiguration.image =
-            UIImage(
-                systemName: "chevron.left"
-            )
-
-        buttonConfiguration.imagePadding = 3
-        buttonConfiguration.baseForegroundColor =
-            .systemYellow
-
-        let backButton = UIButton(
-            configuration:
-                buttonConfiguration
-        )
-
-        backButton.addTarget(
-            self,
-            action: #selector(backButtonTapped),
-            for: .touchUpInside
-        )
-
-        backButton.accessibilityLabel =
-            "Сохранить и вернуться назад"
-
-        navigationItem.leftBarButtonItem =
-            UIBarButtonItem(
-                customView: backButton
-            )
-
-        let appearance =
-            UINavigationBarAppearance()
-
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .black
-        appearance.shadowColor = .clear
-
-        navigationController?
-            .navigationBar
-            .standardAppearance = appearance
-
-        navigationController?
-            .navigationBar
-            .scrollEdgeAppearance = appearance
-
-        navigationController?
-            .navigationBar
-            .compactAppearance = appearance
     }
 
     private func configureHierarchy() {
+        view.addSubview(backButton)
         view.addSubview(titleTextField)
         view.addSubview(dateLabel)
         view.addSubview(detailsTextView)
@@ -279,12 +291,35 @@ final class TaskEditorViewController:
 
     private func configureConstraints() {
         NSLayoutConstraint.activate([
-            titleTextField.topAnchor.constraint(
+            backButton.topAnchor.constraint(
                 equalTo:
                     view.safeAreaLayoutGuide
                         .topAnchor,
                 constant:
-                    Layout.contentTopInset
+                    Layout.backTopInset
+            ),
+
+            backButton.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor,
+                constant:
+                    Layout.backLeadingInset
+            ),
+
+            backButton.heightAnchor.constraint(
+                equalToConstant:
+                    Layout.backHeight
+            ),
+
+            backButton.widthAnchor.constraint(
+                greaterThanOrEqualToConstant:
+                    88
+            ),
+
+            titleTextField.topAnchor.constraint(
+                equalTo:
+                    backButton.bottomAnchor,
+                constant:
+                    Layout.backToTitleSpacing
             ),
 
             titleTextField.leadingAnchor.constraint(
@@ -374,6 +409,12 @@ final class TaskEditorViewController:
     }
 
     private func configureActions() {
+        backButton.addTarget(
+            self,
+            action: #selector(backButtonTapped),
+            for: .touchUpInside
+        )
+
         titleTextField.delegate = self
         detailsTextView.delegate = self
 
@@ -436,19 +477,13 @@ extension TaskEditorViewController:
         detailsTextView.isEditable =
             !isSaving
 
-        navigationItem
-            .leftBarButtonItem?
-            .isEnabled = !isSaving
+        backButton.isEnabled = !isSaving
 
-        navigationItem
-            .leftBarButtonItem?
-            .customView?
-            .isUserInteractionEnabled = !isSaving
+        backButton.isUserInteractionEnabled =
+            !isSaving
 
-        navigationItem
-            .leftBarButtonItem?
-            .customView?
-            .alpha = isSaving ? 0.5 : 1
+        backButton.alpha =
+            isSaving ? 0.5 : 1
 
         if isSaving {
             view.endEditing(true)

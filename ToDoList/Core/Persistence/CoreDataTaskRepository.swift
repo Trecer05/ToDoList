@@ -226,14 +226,15 @@ nonisolated final class CoreDataTaskRepository:
 
                 try Self.save(context)
 
-                return ()
+                return Void()
             },
             completion: completion
         )
     }
 
-    func toggleTask(
+    func setTaskCompletion(
         id: UUID,
+        isCompleted: Bool,
         completion:
             @escaping @MainActor @Sendable (
                 Result<
@@ -255,7 +256,11 @@ nonisolated final class CoreDataTaskRepository:
                         .taskNotFound
                 }
 
-                entity.isCompleted.toggle()
+                // Записываем конкретное состояние,
+                // а не просто инвертируем старое.
+                // Это защищает от рассинхронизации
+                // при быстрых повторных нажатиях.
+                entity.isCompleted = isCompleted
 
                 try Self.save(context)
 
